@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Add Waste - Recycle App</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <nav class="navbar">
+    <button type="button" class="menu-toggle" id="menuToggle">&#9776;</button>
+    <div class="nav-logo">♻️ RecycleApp</div>
+    <div class="nav-links desktop-nav">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="addwaste.html">Add Waste</a>
+      <a href="history.html">History</a>
+      <a href="scanner.html">Image Scanner</a>
+    </div>
+  </nav>
+  <aside class="side-menu" id="sideMenu">
+    <div class="side-menu-header">
+      <strong>Menu</strong>
+      <button type="button" class="side-menu-close" id="closeMenuBtn">&times;</button>
+    </div>
+    <nav class="side-menu-links">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="addwaste.html">Add Waste</a>
+      <a href="history.html">History</a>
+      <a href="scanner.html">Image Scanner</a>
+    </nav>
+  </aside>
+  <div class="menu-backdrop" id="menuBackdrop"></div>
+  <div class="container">
+    <h1>Add Waste Item</h1>
+    <form id="wasteForm">
+      <input type="text" id="item" placeholder="Enter item name (e.g., plastic bottle)" required />
+      <button type="submit">Check & Add</button>
+    </form>
+    <div id="wasteResult"></div>
+    <button onclick="location.href='dashboard.html'">Back to Dashboard</button>
+  </div>
+  <footer class="footer">
+    <p>&copy; 2026 Smart Recycling Assistant | Built for Hackathons 🚀</p>
+  </footer>
+  <script src="app.js"></script>
+</body>
+</html>

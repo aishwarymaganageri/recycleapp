@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Simple Recycle AI Scanner</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    /* Additional scanner-specific styles can go here if needed */
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <button type="button" class="menu-toggle" id="menuToggle">&#9776;</button>
+    <div class="nav-logo">♻️ RecycleApp</div>
+    <div class="nav-links desktop-nav">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="addwaste.html">Add Waste</a>
+      <a href="history.html">History</a>
+      <a href="scanner.html">Image Scanner</a>
+    </div>
+  </nav>
+  <aside class="side-menu" id="sideMenu">
+    <div class="side-menu-header">
+      <strong>Menu</strong>
+      <button type="button" class="side-menu-close" id="closeMenuBtn">&times;</button>
+    </div>
+    <nav class="side-menu-links">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="addwaste.html">Add Waste</a>
+      <a href="history.html">History</a>
+      <a href="scanner.html">Image Scanner</a>
+    </nav>
+  </aside>
+  <div class="menu-backdrop" id="menuBackdrop"></div>
+  <div class="container scanner-ui">
+    <div class="scanner-header">
+      <span class="scanner-icon">&#9851;&#65039;</span>
+      <h1 class="scanner-title">AI Recycle Scanner</h1>
+    </div>
+    <p class="scanner-desc">Upload a photo of an item to identify it locally (offline)<br>and check if it is recyclable.</p>
+    <label class="upload-btn">
+      <span style="font-size:1.2em;">&#128247;</span> Take Photo / Upload Image
+      <input type="file" id="imageInput" accept="image/*" capture="environment" />
+    </label>
+    <div class="scanner-preview-wrap">
+      <img id="previewImage" alt="Preview" />
+    </div>
+    <div class="loading" id="loading">Scanning Item... <span style="font-size:1.2em;">&#128269;</span></div>
+    <div class="result" id="resultContainer">
+      <div class="result-title" id="resultTitle"></div>
+      <div class="result-details" id="resultDetails"></div>
+    </div>
+    <button class="scanner-back-btn" onclick="location.href='dashboard.html'">Back to Dashboard</button>
+  </div>
+  <footer class="footer">
+    <p>&copy; 2026 Smart Recycling Assistant | Built for Hackathons 🚀</p>
+  </footer>
+  <script src="app.js"></script>
+  <script>
+    const imageInput = document.getElementById('imageInput');
+    const loading = document.getElementById('loading');
+    const resultContainer = document.getElementById('resultContainer');
+    const resultTitle = document.getElementById('resultTitle');
+    const resultDetails = document.getElementById('resultDetails');
+    const previewImage = document.getElementById('previewImage');
+    const recyclableKeywords = ['bottle', 'plastic', 'can', 'paper', 'glass', 'cardboard', 'metal', 'box', 'aluminum', 'tin', 'carton', 'newspaper'];
+    const nonRecyclableKeywords = ['food', 'waste', 'styrofoam', 'foam', 'diaper', 'tissue', 'ceramic', 'mirror', 'bulb', 'battery', 'medical'];
+
+    imageInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      // Show preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        previewImage.onload = () => {
+          analyzeImage(previewImage, file.name);
+        };
+        previewImage.src = e.target.result;
+        previewImage.style.display = 'block';
+        resultContainer.style.display = 'none';
+        loading.style.display = 'block';
+        loading.textContent = 'Scanning Item... \u{1F50D}';
+      };
+      reader.readAsDataURL(file);
+    });
+
+    function classifyByTextSignals(text) {
+      const normalized = String(text || '').toLowerCase();
+      const hasRecyclable = recyclableKeywords.some((kw) => normalized.includes(kw));
+      const hasNonRecyclable = nonRecyclableKeywords.some((kw) => normalized.includes(kw));
+      if (hasNonRecyclable && !hasRecyclable) return false;
+      if (hasRecyclable) return true;
+      return false;
+    }
+
+    function handleLocalFallback(fileName, reason) {
+      const inferredItem = (fileName || 'Unknown item').replace(/\.[^/.]+$/, '');
+      const isRecyclable = classifyByTextSignals(inferredItem);
+      displayResult(
+        inferredItem || 'Unknown item',
+        isRecyclable,
+        35,
+        ['local fallback', 'model unavailable', reason || 'classification issue']
+      );
+    }
+
+    function getImageSignals(imageElement) {
+      const canvas = document.createElement('canvas');
+      const maxSize = 192;
+      const scale = Math.min(maxSize / imageElement.naturalWidth, maxSize / imageElement.naturalHeight, 1);
+      canvas.width = Math.max(32, Math.floor(imageElement.naturalWidth * scale));
+      canvas.height = Math.max(32, Math.floor(imageElement.naturalHeight * scale));
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      ctx.drawImage(imageElement, 0, 0, canvas.width, canvas.height);
+
+      const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      let pixels = 0;
+      let sumR = 0;
+      let sumG = 0;
+      let sumB = 0;
+      let saturationSum = 0;
+      let grayishPixels = 0;
+      let brownishPixels = 0;
+      let brightPixels = 0;
+
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+        const max = Math.max(r, g, b);
+        const min = Math.min(r, g, b);
+        const sat = max === 0 ? 0 : (max - min) / max;
+
+        pixels += 1;
+        sumR += r;
+        sumG += g;
+        sumB += b;
+        saturationSum += sat;
+
+        if (Math.abs(r - g) < 16 && Math.abs(g - b) < 16) grayishPixels += 1;
+        if (r > 95 && g > 60 && g < 165 && b < 110) brownishPixels += 1;
+        if (r > 195 && g > 195 && b > 195) brightPixels += 1;
+      }
+
+      const avgR = sumR / pixels;
+      const avgG = sumG / pixels;
+      const avgB = sumB / pixels;
+
+      return {
+        avgR,
+        avgG,
+        avgB,
+        avgSat: saturationSum / pixels,
+        grayRatio: grayishPixels / pixels,
+        brownRatio: brownishPixels / pixels,
+        brightRatio: brightPixels / pixels
+      };
+    }
+
+    function inferItemBySignals(fileName, signals) {
+      const base = String(fileName || '').toLowerCase();
+
+      if (classifyByTextSignals(base)) {
+        return { item: base.replace(/\.[^/.]+$/, '') || 'container', confidence: 82, labels: ['filename match', 'known recyclable pattern'] };
+      }
+
+      if (nonRecyclableKeywords.some((kw) => base.includes(kw))) {
+        return { item: base.replace(/\.[^/.]+$/, '') || 'household waste', confidence: 80, labels: ['filename match', 'known non-recyclable pattern'], forceNonRecyclable: true };
+      }
+
+      if (signals.grayRatio > 0.45 && signals.avgSat < 0.2) {
+        return { item: 'metal container', confidence: 74, labels: ['gray texture', 'low saturation', 'container-like'] };
+      }
+
+      if (signals.brownRatio > 0.22 && signals.avgSat < 0.45) {
+        return { item: 'cardboard or paper packaging', confidence: 71, labels: ['brown tone', 'paper-like profile'] };
+      }
+
+      if (signals.brightRatio > 0.38 && signals.avgSat < 0.28) {
+        return { item: 'glass or clear bottle', confidence: 69, labels: ['bright highlights', 'low saturation', 'transparent profile'] };
+      }
+
+      if (signals.avgSat > 0.45) {
+        return { item: 'plastic packaging', confidence: 66, labels: ['high color saturation', 'consumer packaging profile'] };
+      }
+
+      return { item: 'mixed household item', confidence: 58, labels: ['visual fallback', 'uncertain material'] };
+    }
+
+    async function analyzeImage(imageElement, fileName) {
+      try {
+        loading.textContent = 'Scanning Item... \u{1F50D}';
+        const signals = getImageSignals(imageElement);
+        const inferred = inferItemBySignals(fileName, signals);
+
+        const fromItem = classifyByTextSignals(inferred.item);
+        const fromFileName = classifyByTextSignals((fileName || '').toLowerCase());
+        const isRecyclable = inferred.forceNonRecyclable ? false : (fromItem || fromFileName);
+
+        displayResult(inferred.item, isRecyclable, inferred.confidence, inferred.labels);
+      } catch (err) {
+        const message = String(err?.message || 'Unknown error');
+        handleLocalFallback(fileName, message);
+      }
+    }
+
+    function displayResult(item, isRecyclable, confidence, otherTags) {
+      loading.style.display = 'none';
+      resultContainer.style.display = 'block';
+      resultContainer.className = 'result ' + (isRecyclable ? 'recyclable' : 'not-recyclable');
+      resultTitle.innerHTML = isRecyclable 
+        ? `\u267b\ufe0f Yes, it's Recyclable!` 
+        : `\ud83d\uddd1\ufe0f Not Recyclable`;
+      resultDetails.innerHTML = `
+        <strong>Detected:</strong> ${item} (${confidence}% sure)<br>
+        <div style="margin-top: 10px; font-size: 0.85em; color: inherit;">
+          ${isRecyclable ? 'Please rinse it and put it in your recycling bin.' : 'Please dispose of this in the general waste bin.'}
+        </div>
+        <div style="margin-top: 10px; font-size: 0.75em; opacity: 0.7;">
+          Tags: ${otherTags.join(', ')}
+        </div>
+      `;
+    }
+
+    function displayError(message) {
+      loading.style.display = 'none';
+      resultContainer.style.display = 'block';
+      resultContainer.className = 'result not-recyclable';
+      resultTitle.innerHTML = `\u26a0\ufe0f Error`;
+      resultDetails.innerHTML = message;
+    }
+  </script>
+</body>
+</html>

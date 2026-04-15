@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Recycle App - Login/Register</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <nav class="navbar">
+    <button type="button" class="menu-toggle" id="menuToggle">&#9776;</button>
+    <div class="nav-logo">♻️ RecycleApp</div>
+    <div class="nav-links desktop-nav">
+      <a href="index.html">Home</a>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="addwaste.html">Add Waste</a>
+      <a href="history.html">History</a>
+      <a href="scanner.html">Image Scanner</a>
+    </div>
+  </nav>
+  <aside class="side-menu" id="sideMenu">
+    <div class="side-menu-header">
+      <strong>Menu</strong>
+      <button type="button" class="side-menu-close" id="closeMenuBtn">&times;</button>
+    </div>
+    <nav class="side-menu-links">
+      <a href="index.html">Home</a>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="addwaste.html">Add Waste</a>
+      <a href="history.html">History</a>
+      <a href="scanner.html">Image Scanner</a>
+    </nav>
+  </aside>
+  <div class="menu-backdrop" id="menuBackdrop"></div>
+  <div class="container">
+    <h1>♻️ Smart Recycling Assistant</h1>
+    <form id="authForm">
+      <input type="text" id="name" placeholder="Name (for register)" />
+      <input type="email" id="email" placeholder="Email" required />
+      <input type="password" id="password" placeholder="Password" required />
+      <button type="submit" id="loginBtn">Login</button>
+      <button type="button" id="registerBtn">Register</button>
+    </form>
+    <div id="message"></div>
+  </div>
+  <footer class="footer">
+    <p>&copy; 2026 Smart Recycling Assistant | Built for Hackathons 🚀</p>
+  </footer>
+  <script src="app.js"></script>
+</body>
+</html>
